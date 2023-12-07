@@ -1,0 +1,124 @@
+db.createCollection("atendimentos");
+use atendimentos
+db.atendimentos.insertMany([
+  {
+    cliente: "João",
+    pet: "Malhado",
+    data: new Date("2020-03-01"),
+    preco: 450,
+    procedimentos: ["Banho", "Tosa"],
+  },
+  {
+    cliente: "Maria",
+    pet: "Curioso",
+    data: new Date("2020-03-10"),
+    preco: 100,
+    procedimentos: ["Banho"],
+  },
+  {
+    cliente: "Maria",
+    pet: "Curioso",
+    data: new Date("2020-03-05"),
+    preco: 700,
+    procedimentos: ["Consulta", "Medicamento"],
+  },
+]);
+
+db.atendimentos.insertOne({
+  cliente: "Bob",
+  pet: "Bob-inho",
+  data: new Date("2020-03-15"),
+  preco: 800,
+  procedimentos: ["Hospedagem"],
+});
+
+const documento = db.atendimentos.findOne({
+  cliente: "Maria",
+});
+
+documento.procedimentos.push("Consulta");
+
+db.atendimentos.updateOne({
+  _id: documento._id,
+}, {
+  $set: {
+    procedimentos: documento.procedimentos,
+  },
+});
+
+const documentos = db.atendimentos.find({
+  procedimentos: { $in: ["Hospedagem"] },
+});
+
+for (const documento of documentos) {
+  console.log(documento.pet);
+}
+
+const documentos = db.atendimentos.find({
+  procedimentos: { $size: 1 },
+});
+
+for (const documento of documentos) {
+  console.log(documento.pet);
+}
+
+const documentos = db.atendimentos.find({
+  preco: 700,
+});
+
+for (const documento of documentos) {
+  console.log(documento.cliente, documento.pet);
+}
+
+const atendimentos = db.atendimentos.aggregate([
+  {
+    $group: {
+      _id: "$cliente", // Use $addToSet to get all unique clients
+      total: { $sum: "$preco" },
+    },
+  },
+]);
+
+for (const atendimento of atendimentos) {
+  console.log(atendimento._id, atendimento.total);
+}
+
+const documentos = db.atendimentos.aggregate([
+  {
+    $group: {
+      _id: "$cliente",
+      maior: { $max: "$preco" },
+    },
+  },
+]);
+
+for (const documento of documentos) {
+  console.log(documento._id, documento.maior);
+}
+
+const documentos = db.atendimentos.find({
+  cliente: "Maria",
+}).sort({ preco: -1 }).limit(1);
+
+for (const documento of documentos) {
+  console.log(documento.preco);
+}
+
+const documentos = db.atendimentos.aggregate([
+    {
+      $group: {
+        key: "$cliente",
+        totalProcedimentos: { $sum: "$procedimentos.length" },
+      },
+    },
+  ]);
+
+const documentos = db.atendimentos.find({
+  $expr: {
+    $gte: ["$totalProcedimentos", 2],
+  },
+});
+
+documentos.forEach(documento => {
+  console.log(documento);
+});
